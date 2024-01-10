@@ -1,8 +1,11 @@
-from flask import Flask,request,jsonify, redirect, url_forzz
-from models import db,User
+from flask import Flask,request,jsonify, redirect
+from models import db,User,Register
+from flask_cors import CORS, cross_origin
 
 from flask_sqlalchemy import SQLAlchemy
+
 app=Flask(__name__)
+CORS(app, origins=["*"] )
 app.config["SECRET KEY"] = "SUDIKSHYA"
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:@localhost/loanprediction"
 SQLALCHEMY_TRACK_NOTIFICATIONS=False
@@ -40,8 +43,24 @@ def signin():
         # Commit changes to the database
         db.session.commit()
 
-        return jsonify({"message": "User signed in successfully"})
-   
+        return jsonify({"message": "User logged in successfully"})
+@app.route("/registers",methods=["POST"])
+def register():
+    if request.method=="POST":
+        data=request.get_json()
+        username=data.get('username')
+        useremail=data.get('useremail')
+        userphone=data.get('userphone')
+        userpassword=data.get('userpassword')
+        confirmpassword=data.get('confirmpassword')
+        new_Register = Register(username=username, useremail=useremail, userpassword=userpassword, userphone=userphone, confirmpassword=confirmpassword)
+         # Add user to the database session
+        db.session.add(new_Register)
+
+        # Commit changes to the database
+        db.session.commit()
+
+        return jsonify({"message": "User registered in successfully"})
 
 if __name__=="__main__":
     app.run(debug=True)
