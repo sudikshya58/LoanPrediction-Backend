@@ -12,7 +12,7 @@ with app.app_context():
     db.create_all() 
 @app.route('/')
 def hello():
-    return "hello"
+    return "hello everyone"
 @app.route("/login",methods=["POST"])
 def login():
     email=request.json['email']
