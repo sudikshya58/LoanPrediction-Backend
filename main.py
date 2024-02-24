@@ -39,7 +39,7 @@ def create_token():
         return jsonify({"error": "Wrong email or password"}), 401
 
     access_token = create_access_token(identity=useremail)
-    return jsonify({"useremail": useremail, "access_token": access_token})
+    return jsonify({"useremail": useremail, "access_token": access_token,"message": "Logged in successfully"})
 
 
 @app.route('/')
