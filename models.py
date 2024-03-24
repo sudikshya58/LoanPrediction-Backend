@@ -11,6 +11,12 @@ class User(db.Model):
     id = db.Column(db.String(11), primary_key=True, unique=True, default=get_uuid)
     useremail = db.Column(db.String(150), unique=True)
     userpassword = db.Column(db.Text, nullable=False)
+class AdminUser(db.Model):
+      __tablename__ = "admindetail"
+      id = db.Column(db.String(11), primary_key=True, unique=True, default=get_uuid)
+      useremail = db.Column(db.String(150), unique=True)
+      userpassword = db.Column(db.Text, nullable=False)
+
 class Register(db.Model):
     __tablename__ = "register"
     id = db.Column(db.String(11), primary_key=True, unique=True, default=get_uuid)
