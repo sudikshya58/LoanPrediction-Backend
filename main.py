@@ -25,18 +25,12 @@ def create_token():
     userpassword = request.json.get("userpassword", None)
     user = Register.query.filter_by(useremail=useremail).first()
     if user is None:
-        return jsonify({"error": "Wrong email or passwords"}), 401   
+        return jsonify({"error": "Wrong email or password"}), 401
     if not bcrypt.check_password_hash(user.userpassword, userpassword):
         return jsonify({"error": "Wrong email or password"}), 401
 
     access_token = create_access_token(identity=useremail)
-    hashed_password = bcrypt.generate_password_hash(userpassword).decode('utf-8')
-
-
-    loginusers=User(useremail=useremail,userpassword= hashed_password)
-    db.session.add(loginusers)
-    db.session.commit()
-    return jsonify({"useremail": useremail, "access_token": access_token,"message": "Logged in successfully"})
+    return jsonify({"useremail": useremail, "access_token": access_token, "message": "Logged in successfully"})
 
 @app.route('/admin_login', methods=["POST"])
 @cross_origin()
