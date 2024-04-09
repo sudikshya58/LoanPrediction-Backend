@@ -6,6 +6,9 @@ from flask_jwt_extended import create_access_token,get_jwt,get_jwt_identity
 from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
+
 # from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity, decode_token, revoke_token
 app=Flask(__name__)
 CORS(app, origins=["*"], methods=["GET", "POST", "PATCH", "DELETE"], allow_headers=["Content-Type", "Authorization"])
@@ -83,9 +86,6 @@ def get_admin_users():
     user = AdminUser.query.filter_by(useremail=useremail).first()
     if user is None:
         return jsonify({"error": "Wrong email or password"}), 401
-
- 
-
     access_token = create_access_token(identity=useremail)
     return jsonify({"useremail": useremail, "admin_token": access_token, "message": "Admin logged in successfully"})
 @app.route('/')
@@ -159,7 +159,10 @@ from flask import request
 from flask_cors import cross_origin
 import numpy as np
 import pandas as pd
-from Algorithm.LogisticRegression import Logistic_Regression
+from LogisticRegression import Logistic_Regression
+from sklearn.metrics import confusion_matrix
+import logging
+
     
 class loan_prediction_result(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -184,7 +187,16 @@ def send_data():
     new_prediction = None
     
     # Load the trained model
-    model = load_model()
+    model,accuracy,correlation_matrix = load_model()
+    test_data = pd.read_csv(r'A:\Flask\datasets\testdata.csv')
+    xtest, ytest = test_data.drop(columns='Loan_Status', axis=1), test_data['Loan_Status']
+    xtest = np.array(xtest)
+    ytest = np.array(ytest)
+    y_pred = model.predict(xtest)
+    conf_matrix = confusion_matrix(ytest, y_pred)
+    print("Confusion Matrix:")
+    print(conf_matrix)
+
     
     # Data preprocessing and model prediction
     gender = 0 if data['Gender'] == "Female" else 1
@@ -207,6 +219,10 @@ def send_data():
     # Prepare data for prediction
     data_list = [gender, married, dependent, education, self_employed, credit_history, propertyArea, applicationIncomelog, loanamountlog, loanamounttermlog, totalincomelog] 
     data_numpy = np.array(data_list)
+    print("-------------Data---------")
+    print(data_numpy)
+    print("---------------------prediction-------------------")
+    y_pred = model.predict_for_one(data_numpy)
     
     # Make prediction
     y_pred = model.predict_for_one(data_numpy)
@@ -225,13 +241,33 @@ def send_data():
         if new_prediction is not None:
             db.session.add(new_prediction)
             db.session.commit()
+
+    return jsonify({"Remarks": y_predictions, "Accuracy": accuracy, "Confusion_Matrix": conf_matrix.tolist()})
+
+@app.route('/getdata', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def Get_data():
+    # Load the trained model
+    model, accuracy, correlation_matrix = load_model()
     
-    return {"Remarks": y_predictions}
+    # Load test data
+    test_data = pd.read_csv(r'A:\Flask\datasets\testdata.csv')
+    xtest, ytest = test_data.drop(columns='Loan_Status', axis=1), test_data['Loan_Status']
+    xtest = np.array(xtest)
+    ytest = np.array(ytest)
+    
+    # Make predictions
+    y_pred = model.predict(xtest)
+    conf_matrix = confusion_matrix(ytest, y_pred)
+    
+    # Return accuracy and confusion matrix
+    return jsonify({"Accuracy": accuracy, "Confusion_Matrix": conf_matrix.tolist()})
+
 
 def load_model():
-    # Load and return the trained model
-    train_data = pd.read_csv(r'A:\Flask\datasets\testdata.csv')
-    test_data = pd.read_csv(r'A:\Flask\datasets\traindata.csv')
+    # Load and return the trained model 
+    train_data = pd.read_csv(r'A:\Flask\datasets\trains.csv')
+    test_data = pd.read_csv(r'A:\Flask\datasets\testdata.csv')
     xtrain, ytrain = train_data.drop(columns='Loan_Status', axis=1), train_data['Loan_Status']
     xtest, ytest = test_data.drop(columns='Loan_Status', axis=1), test_data['Loan_Status']
     xtrain = np.array(xtrain)
@@ -240,7 +276,15 @@ def load_model():
     ytest = np.array(ytest)
     model = Logistic_Regression(lr=0.01, n_iters=50000)
     model.fit(xtrain, ytrain)
-    return model
+    y_pred = model.predict(xtest)
+    y_train=model.predict(xtrain)
+    accuracy = accuracy_score(ytest, y_pred)
+    trainaccuracy=accuracy_score(ytrain,y_train)
+    print("Accuracy",accuracy)
+    print('Train Accuracy',trainaccuracy)
+    correlation_matrix = train_data.corr()
+    return model, accuracy,correlation_matrix
+    
 
 def condition_met(data):
     # Define your condition here
