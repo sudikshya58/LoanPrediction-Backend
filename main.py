@@ -188,7 +188,7 @@ def send_data():
     
     # Load the trained model
     model,accuracy,correlation_matrix = load_model()
-    test_data = pd.read_csv(r'A:\Flask\datasets\testdata.csv')
+    test_data = pd.read_csv(r'A:\Flask\datasets\trains.csv')
     xtest, ytest = test_data.drop(columns='Loan_Status', axis=1), test_data['Loan_Status']
     xtest = np.array(xtest)
     ytest = np.array(ytest)
@@ -243,7 +243,6 @@ def send_data():
             db.session.commit()
 
     return jsonify({"Remarks": y_predictions, "Accuracy": accuracy, "Confusion_Matrix": conf_matrix.tolist()})
-
 @app.route('/getdata', methods=['GET', 'OPTIONS'])
 @cross_origin()
 def Get_data():
@@ -260,8 +259,9 @@ def Get_data():
     y_pred = model.predict(xtest)
     conf_matrix = confusion_matrix(ytest, y_pred)
     
-    # Return accuracy and confusion matrix
-    return jsonify({"Accuracy": accuracy, "Confusion_Matrix": conf_matrix.tolist()})
+    # Return accuracy, confusion matrix, and correlation matrix
+    return jsonify({"Accuracy": accuracy, "Confusion_Matrix": conf_matrix.tolist(), "Correlation_Matrix": correlation_matrix.to_dict()})
+
 
 
 def load_model():
